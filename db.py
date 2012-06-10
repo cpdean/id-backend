@@ -70,14 +70,15 @@ class Post:
                             from Post 
                             where post_id = (?)""", (post_id,))
 
-                post_id,date,title,body,image_path = c.fetchone()
+                post_id,date,title,body,image_name = c.fetchone()
                 self.post_id = post_id
                 self.date = date
                 self.title = title
                 self.body = body
-                self.image_path = image_path
-                self.image_name = None
-                if image_path is not None:
+                self.image_name = image_name
+                self.image_path = os.path.join(image_store,image_name)
+                self.filtered_image_path = os.path.join(filtered_image_store,image_name)
+                if image_name is not None:
                     try:
                         tmp = open(self.image_path,'rb')
                         self.image_data = tmp.read()
@@ -88,13 +89,13 @@ class Post:
     def save(self):
         if self.post_id is None:
             if self.image_name is not None:
-                path = self.save_image(self.image_name,self.image_data)
+                self.save_image(self.image_name,self.image_data)
                 with connect_db() as conn:
                     conn.execute("""insert into Post 
                                     (date,title,body,image_path)
                                     VALUES
                                     (?,?,?,?)
-                                    """,(self.date, self.title, self.body, path))
+                                    """,(self.date, self.title, self.body, self.image_name))
             else:
                 with connect_db() as conn:
                     conn.execute("""insert into Post 
