@@ -12,13 +12,17 @@ import os
 
 from filter import filter
 
+import db
 
 app = Flask(__name__)
 
 ALLOWED_EXTENSIONS = set(['jpg'])
 
-import db
+UPLOAD_FOLDER = db.image_store
+ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
 
+app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 @app.route('/')
 def index():
@@ -44,8 +48,9 @@ def post_list():
         p = db.Post()
         p.title = request.form['title']
         p.caption = request.form['caption']
-        i_data = get_image(request)
-        p.image_data = i_data if i_data is not None else ''
+        image = get_image(request)
+        p.image_name = image.filename
+        p.image_data = image.stream.read()
         p.save()
         return redirect(url_for("post_list"))
 
@@ -62,7 +67,7 @@ def allowed_file(filename):
 def get_image(r):
     image = r.files['file']
     if image and allowed_file(image.filename):
-        return image.read()
+        return image
 
 @app.route('/post/',methods=['POST','GET'])
 def redirect_to_latest():
@@ -93,17 +98,7 @@ def show_goat(post_id=None):
         r = Response(data, status=200, mimetype='image/jpeg')
         return r
 
-@app.route('/image/<int:post_id>.jpg',methods=['POST','GET'])
-def show_image(post_id=None):
-    if request.method == 'POST':
-        pass
-
-    elif request.method == 'GET':
-        post = db.Post(post_id)
-        data = post.image_data
-        r = Response(data, status=200, mimetype='image/jpeg')
-        return r
-
+"""
 @app.route('/image-filtered/<int:post_id>.jpg',methods=['POST','GET'])
 def show_filtered_image(post_id=None):
     if request.method == 'POST':
@@ -116,6 +111,7 @@ def show_filtered_image(post_id=None):
         data = murad_filter(data)
         r = Response(data, status=200, mimetype='image/jpeg')
         return r
+"""
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT",5000))

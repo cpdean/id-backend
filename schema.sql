@@ -1,9 +1,8 @@
-drop table if exists post;
+drop table if exists Post;
 create table post (
-        post_id SERIAL,
-        post_date TIMESTAMP,
-        title VARCHAR(80),
-        caption VARCHAR(80),
-        image_data BYTEA,
-        PRIMARY KEY (post_id)
+        post_id integer primary key autoincrement,
+        date TIMESTAMP,
+        title string,
+        body  string,
+        image_path string
 );

@@ -1,52 +1,51 @@
 from datetime import datetime
-
-import psycopg2
+from sqlite3 import dbapi2 as sqlite3
 
 from os.path import exists
 from os import makedirs
-import os
+import os 
+from werkzeug import secure_filename
 
-import urlparse
+import logging
 
-urlparse.uses_netloc.append('postgres')
-url = urlparse.urlparse(os.environ.get('DATABASE_URL',"postgres://herokuflask@localhost/herokudb"))
-
-db = "dbname=%s user=%s password=%s host=%s " % (url.path[1:], url.username, url.password, url.hostname)
-
+db = "database"
+image_store = os.path.join("static","image-store")
 schema = "schema.sql"
 
 def open_database_connection():
-    #return psycopg2.connect('dbname=herokudb user=herokuflask')
-    return psycopg2.connect(db)
+    return sqlite3.connect(db, detect_types=sqlite3.PARSE_DECLTYPES)
 
 def connect_db():
+    if not exists(db):
+        init_db()
+        init_image_store()
     return open_database_connection()
 
 def init_db():
-    conn = open_database_connection()
-    with open(schema) as s:
-        c = conn.cursor()
+    with open_database_connection() as conn:
+        with open(schema) as s:
+            c = conn.cursor()
 
-        c.execute(s.read())
-        conn.commit()
-    conn.close()
+            c.executescript(s.read())
+            conn.commit()
+
+def init_image_store():
+    if not exists(image_store):
+        makedirs(image_store)
 
 def get_latest_post():
-    conn = connect_db()
-    c = conn.cursor()
-    c.execute( """
-                select post_id
-                from
-                Post
-                order by
-                post_date DESC
-                limit 1;
-                """)
-    id_record = c.fetchone()
-    post_id = id_record[0]
-    post_id = int(post_id)
-    conn.close()
-    return Post(post_id)
+    with connect_db() as conn:
+        query = conn.cursor().execute( """
+                                        select *
+                                        from
+                                        Post
+                                        order by
+                                        date DESC
+                                        limit 1;
+                                        """)
+        post_id,date,title,body,image_path = query.fetchone()
+        post_id = int(post_id)
+        return Post(post_id)
  
 
 
@@ -54,49 +53,67 @@ class Post:
 
     def __init__(self,post_id=None):
         if not post_id:
-            self.post_date = datetime.now()
+            self.date = datetime.now()
             self.title = "This is the title"
-            self.caption = "The caption"
+            self.body = "The body"
             self.post_id = None
-            self.image_data = None
+            self.image_name = None
         else:
-            conn = connect_db()
-            c = conn.cursor()
-            c.execute("""select post_id,post_date,title,caption,image_data
-                        from Post 
-                        where post_id = (%s)""", (post_id,))
+            with connect_db() as conn:
+                c = conn.cursor()
+                c.execute("""select post_id,date,title,body,image_path
+                            from Post 
+                            where post_id = (?)""", (post_id,))
 
-            post_id,post_date,title,caption,image_data = c.fetchone()
-            self.post_id = post_id
-            self.post_date = post_date
-            self.title = title
-            self.caption = caption
-            self.image_data = image_data
-            conn.close()
+                post_id,date,title,body,image_path = c.fetchone()
+                self.post_id = post_id
+                self.date = date
+                self.title = title
+                self.body = body
+                self.image_path = image_path
+                self.image_name = None
+                if image_path is not None:
+                    try:
+                        tmp = open(self.image_path,'rb')
+                        self.image_data = tmp.read()
+                    except IOError:
+                        pass
                 
 
     def save(self):
         if self.post_id is None:
-            conn = connect_db()
-            c = conn.cursor()
-            c.execute("""insert into post 
-                            (post_date,title,caption,image_data)
-                            VALUES
-                            (%s,%s,%s,%s);
-                            """,(self.post_date,
-                            self.title,
-                            self.caption,
-                            psycopg2.Binary(self.image_data)))
-            conn.commit()
-            conn.close()
+            if self.image_name is not None:
+                path = self.save_image(self.image_name,self.image_data)
+                with connect_db() as conn:
+                    conn.execute("""insert into Post 
+                                    (date,title,body,image_path)
+                                    VALUES
+                                    (?,?,?,?)
+                                    """,(self.date, self.title, self.body, path))
+            else:
+                with connect_db() as conn:
+                    conn.execute("""insert into Post 
+                                    (date,title,body)
+                                    VALUES
+                                    (?,?,?)
+                                    """,(self.date, self.title, self.body))
+
+                conn.commit()
+
+    def save_image(self,filename,filedata):
+        filename = secure_filename(filename)
+        path = os.path.join(image_store,filename)
+        init_image_store()
+        logging.debug("dude come on: "+path)
+        saveable = open(path,"wb")
+        saveable.write(filedata)
+        return path
 
     def show(self):
-        conn = connect_db()
-        c = conn.cursor()
-        c.execute("select post_id,post_date,title,caption from Post order by post_date")
-        r = c.fetchall() #rows
-        posts = [(i,d,t,com) for i,d,t,com in r]
+        with connect_db() as conn:
+            c = conn.cursor()
+            c.execute("select post_id,date,title,body from Post order by date")
+            posts = [(i,d,t,b) for i,d,t,b in c]
 
-        conn.close()
         return posts
 
