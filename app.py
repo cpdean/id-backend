@@ -4,6 +4,7 @@ from flask import render_template
 from flask import request
 from flask import redirect
 from flask import url_for
+from flask import Response
 
 from werkzeug import secure_filename
 import os
@@ -63,6 +64,28 @@ def show_post(post_id=None):
     elif request.method == 'GET':
         post = db.Post(post_id)
         return render_template("view_post.html", post=post )
+
+@app.route('/image/goat.jpg',methods=['POST','GET'])
+def show_goat(post_id=None):
+    if request.method == 'POST':
+        pass
+
+    elif request.method == 'GET':
+        post = db.Post(post_id)
+        data = open("test-data/goatgoat.jpg","rb").read()
+        r = Response(data, status=200, mimetype='image/jpeg')
+        return r
+
+@app.route('/image/<int:post_id>.jpg',methods=['POST','GET'])
+def show_image(post_id=None):
+    if request.method == 'POST':
+        pass
+
+    elif request.method == 'GET':
+        post = db.Post(post_id)
+        data = post.image_data
+        r = Response(data, status=200, mimetype='image/jpeg')
+        return r
 
 
 if __name__ == '__main__':

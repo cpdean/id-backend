@@ -58,19 +58,20 @@ class Post:
             self.title = "This is the title"
             self.caption = "The caption"
             self.post_id = None
-            self.image_data = ""
+            self.image_data = None
         else:
             conn = connect_db()
             c = conn.cursor()
-            c.execute("""select post_id,post_date,title,caption
+            c.execute("""select post_id,post_date,title,caption,image_data
                         from Post 
                         where post_id = (%s)""", (post_id,))
 
-            post_id,post_date,title,caption = c.fetchone()
+            post_id,post_date,title,caption,image_data = c.fetchone()
             self.post_id = post_id
             self.post_date = post_date
             self.title = title
             self.caption = caption
+            self.image_data = image_data
             conn.close()
                 
 
@@ -82,7 +83,10 @@ class Post:
                             (post_date,title,caption,image_data)
                             VALUES
                             (%s,%s,%s,%s);
-                            """,(self.post_date, self.title, self.caption,self.image_data))
+                            """,(self.post_date,
+                            self.title,
+                            self.caption,
+                            psycopg2.Binary(self.image_data)))
             conn.commit()
             conn.close()
 

@@ -43,6 +43,15 @@ class TestDatabase(unittest.TestCase):
 
         self.assertEqual(new_p.post_date,p.post_date)
 
+    def test_image_save(self):
+        i_data = open("./test-data/black.jpg","rb").read()
+        p = db.Post()
+        p.image_data = i_data
+        p.save()
+        new_p = db.get_latest_post()
+
+        self.assertEqual(new_p.image_data,p.image_data)
+
     def test_show_posts(self):
         self.injectSeveralPosts(10)
         posts = db.Post().show()
