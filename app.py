@@ -6,6 +6,7 @@ from flask import redirect
 from flask import url_for
 from flask import Response
 
+
 from werkzeug import secure_filename
 import os
 
@@ -22,6 +23,20 @@ import db
 @app.route('/')
 def index():
     return redirect(url_for("post_list"))
+
+@app.route("/upload",methods=['POST'])
+def upload_file():
+    encoded = request.form['file']
+    decoded = encoded.decode("base64")
+    p = db.Post()
+    p.title = request.form['title']
+    p.caption = "something something"
+    p.image_data = decoded
+    p.save()
+    id_number = db.get_latest_post().post_id
+    return url_for("show_image",post_id=id_number)
+
+
 
 @app.route('/posts/',methods=['POST','GET'])
 def post_list():
