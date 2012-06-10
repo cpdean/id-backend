@@ -9,6 +9,8 @@ from flask import Response
 from werkzeug import secure_filename
 import os
 
+from filter import filter
+
 
 app = Flask(__name__)
 
@@ -95,7 +97,7 @@ def show_filtered_image(post_id=None):
     elif request.method == 'GET':
         post = db.Post(post_id)
         data = post.image_data
-        murad_filter = lambda x: x
+        murad_filter = filter.oldify
         data = murad_filter(data)
         r = Response(data, status=200, mimetype='image/jpeg')
         return r
