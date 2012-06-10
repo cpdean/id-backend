@@ -2,6 +2,8 @@ from random import randint
 from numpy import *
 from PIL import Image,ImageDraw
 
+import os
+
 
 def round_corner(radius, fill):
 
@@ -121,6 +123,7 @@ def show(r,g,b):
 
 def oldify(filename):
 
+        texture_path = os.path.join(os.path.dirname(__file__),"txt.jpg")
 	l = asarray(Image.open(filename).convert('L'))
 
 	w = l.shape[1]
@@ -130,7 +133,7 @@ def oldify(filename):
 	border_blur_radius = int(max(w,h)/5.0)
 	border_px = asarray(brd.convert('L'))
 	border_px = blur(border_px,size=border_blur_radius)
-	texture = asarray(Image.open("texture.jpg").convert('L'))
+	texture = asarray(Image.open(texture_path).convert('L'))
 	texture = texture.astype(float)
 	texture = cutout(texture,w,h)
 	texture = (texture - texture.min())/(texture.max()-texture.min())
