@@ -12,6 +12,7 @@ from oldify import filter
 
 db = "database"
 image_store = os.path.join("static","image-store")
+filtered_image_store = os.path.join("static","filtered-image-store")
 schema = "schema.sql"
 
 def open_database_connection():
@@ -20,10 +21,10 @@ def open_database_connection():
 def connect_db():
     if not exists(db):
         init_db()
-        init_image_store()
     return open_database_connection()
 
 def init_db():
+    init_image_store()
     with open_database_connection() as conn:
         with open(schema) as s:
             c = conn.cursor()
@@ -34,6 +35,8 @@ def init_db():
 def init_image_store():
     if not exists(image_store):
         makedirs(image_store)
+    if not exists(filtered_image_store):
+        makedirs(filtered_image_store)
 
 def get_latest_post():
     with connect_db() as conn:
@@ -105,10 +108,19 @@ class Post:
     def save_image(self,filename,filedata):
         filename = secure_filename(filename)
         path = os.path.join(image_store,filename)
-        init_image_store()
         logging.debug("dude come on: "+path)
         saveable = open(path,"wb")
         saveable.write(filedata)
+        saveable.close()
+        # save filtered copy
+        murad_filter = filter.oldify
+        the_file_object = open(path,"rb")
+        # I think murad_filter takes a file object OR the path to a file
+        image_object = murad_filter(the_file_object)
+
+        filtered_path = os.path.join(filtered_image_store,filename)
+        image_object.save(filtered_path)
+
         return path
 
     def show(self):

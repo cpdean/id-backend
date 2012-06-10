@@ -4,3 +4,4 @@ v
 database
 testenv
 static/image-store
+static/filtered-image-store
