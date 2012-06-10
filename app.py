@@ -87,6 +87,18 @@ def show_image(post_id=None):
         r = Response(data, status=200, mimetype='image/jpeg')
         return r
 
+@app.route('/image-filtered/<int:post_id>.jpg',methods=['POST','GET'])
+def show_filtered_image(post_id=None):
+    if request.method == 'POST':
+        pass
+
+    elif request.method == 'GET':
+        post = db.Post(post_id)
+        data = post.image_data
+        murad_filter = lambda x: x
+        data = murad_filter(data)
+        r = Response(data, status=200, mimetype='image/jpeg')
+        return r
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT",5000))
