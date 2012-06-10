@@ -2,4 +2,5 @@ v
 *.swp
 *.pyc
 database
-test-db
+testenv
+static/image-store
