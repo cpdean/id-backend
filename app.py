@@ -10,8 +10,6 @@ from flask import Response
 from werkzeug import secure_filename
 import os
 
-from filter import filter
-
 import db
 
 app = Flask(__name__)

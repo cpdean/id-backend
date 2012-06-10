@@ -8,6 +8,8 @@ from werkzeug import secure_filename
 
 import logging
 
+from oldify import filter
+
 db = "database"
 image_store = os.path.join("static","image-store")
 schema = "schema.sql"
