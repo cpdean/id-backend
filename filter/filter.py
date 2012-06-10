@@ -142,5 +142,6 @@ def oldify(filename):
 	r,g,b = map(lambda i: multiply(i,texture), (r,g,b))
 	r,g,b = map(lambda i: multiply(i,border_px), (r,g,b))
 	#show(r,g,b)
-    return make_image(r,g,b)
+	return make_image(r,g,b)
+    
 
